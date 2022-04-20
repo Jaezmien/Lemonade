@@ -6,6 +6,10 @@
 
 </div>
 
+# Requirements
+
+This addon requries you to have a theme that is using Overlays. If you're using the included [Simply Love theme for NotITG](https://github.com/TaroNuke/Simply-Love-NotITG-ver.-), you should be good already.
+
 # Instructions
 
 1. Copy the contents of [Screens](Screens/) and [Scripts](Scripts/) to your theme directory. On new installs, there should be no merged files.
