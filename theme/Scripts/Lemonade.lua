@@ -28,7 +28,7 @@ Lemonade.Last_Seen_Write = nil
 Lemonade.Timer = nil
 Lemonade.Buffers = {}
 Lemonade.Hooks = {}
-local ReadBuffers = {}
+local ReadBuffer = {}
 local BUFFER_LENGTH = 26
 
 -- Simple Encode/Decode
@@ -165,13 +165,13 @@ function Lemonade.Tick(self)
 
 		else
 
-			read_buffer[r_id] = read_buffer[r_id] or {}
-			for i,v in pairs(r_bf) do table.insert( read_buffer[r_id], v ) end
+			ReadBuffer[r_id] = ReadBuffer[r_id] or {}
+			for i,v in pairs(r_bf) do table.insert( ReadBuffer[r_id], v ) end
 			if GAMESTATE:GetExternal(27) == 2 then
 				if self.Hooks:Includes(r_id) then
-					for i,v in pairs( self.Hooks:Get(r_id) ) do v( read_buffer[r_id] ) end
+					for i,v in pairs( self.Hooks:Get(r_id) ) do v( ReadBuffer[r_id] ) end
 				end
-				read_buffer[r_id] = nil
+				ReadBuffer[r_id] = nil
 			end
 
 		end
