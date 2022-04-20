@@ -16,17 +16,17 @@ Example:
 
 ```xml
 <ActorFrame
-    OnCommand="effectperiod,0/1;luaeffect,Update"
-    UpdateCommand="%function(self) stitch('lua.event').Update(self) end"
-    OverlayReadyMessageCommand="%function(self) stitch.RequireEnv('lua.setup', {self = self}) end" >
-    <children>
-        <Layer File="Aft" />
+	OnCommand="effectperiod,0/1;luaeffect,Update"
+	UpdateCommand="%function(self) stitch('lua.event').Update(self) end"
+	OverlayReadyMessageCommand="%function(self) stitch.RequireEnv('lua.setup', {self = self}) end" >
+	<children>
+		<Layer File="Aft" />
 		<Layer File="Death" />
-        <Layer File="Console"/>
-        <Layer File="ViewGC" />
+		<Layer File="Console"/>
+		<Layer File="ViewGC" />
 
 		<Layer File="Lemonade"/> <!-- Insert Lemonade.xml here -->
-    </children>
+	</children>
 
 </ActorFrame>
 ```
