@@ -1,6 +1,6 @@
 <div align="center">
   
-# Lemonade
+# 🍋 Lemonade
 
 > A NotITG External handler
 
