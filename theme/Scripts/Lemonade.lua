@@ -34,7 +34,7 @@ local BUFFER_LENGTH = 26
 -- Simple Encode/Decode
 do
 	local GUIDE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n'\"~!@#$%^&*()<>/-=_+[]:;.,`{}"
-	Lemonade.Encode = function(str)
+	function Lemonade.Encode(self, str)
 		local t = {}
 		for i=1,string.len(str) do
 			local char = string.sub(str,i,i)
@@ -44,7 +44,7 @@ do
 		end
 		return t
 	end
-	Lemonade.Decode = function(buff)
+	function Lemonade.Decode(self, buff)
 		local s = ""
 		for i,v in pairs(buff) do
 			s = s..(string.sub(GUIDE,v,v))
@@ -97,7 +97,7 @@ local Buffer_Add = function(self, id, buffer)
 	end
 end
 setmetatable(Lemonade.Buffers, {
-	index = function(self, key)
+	__index = function(self, key)
 		if key == 'Add' then return Buffer_Add end
 		return nil
 	end
@@ -130,7 +130,7 @@ end
 local Hooks_Includes = function(self, id) return self[ id ] ~= nil end
 local Hooks_Get = function(self, id) return self[ id ] end
 setmetatable(Lemonade.Hooks, {
-	index = function(self, key)
+	__index = function(self, key)
 		if key == 'Add' then return Hooks_Add end
 		if key == 'Remove' then return Hooks_Remove end
 		if key == 'Includes' then return Hooks_Includes end
@@ -141,7 +141,7 @@ setmetatable(Lemonade.Hooks, {
 
 -- Updating --
 function Lemonade.Tick(self)
-	if not self.Enabled or self.Initialized then return end
+	if not self.Enabled or not self.Initialized then return end
 	if not (FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617) then
 		self.Enabled = false
 		return
@@ -222,14 +222,15 @@ function Lemonade.Check_Write(self)
 
 end
 
---
+-- Initializing --
 function Lemonade.Initialize(self)
 	for i=0,63 do GAMESTATE:SetExternal(i,0) end
 	GAMESTATE:SetExternal(60,1)
 	print('[Lemonade] Initialized!')
+	self.Initialized = true
 end
 
--- Debugging
+-- Debugging --
 do
 	local debug_help = {
 		{ {0,25}, 'Read Buffer' },

@@ -1,11 +1,11 @@
-<ActorFrame><children>
+<ActorFrame Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"><children>
 
 	<Layer
 		Type="Quad"
 		Name="Lemonade Timer"
-		Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"
 		OverlayReadyMessageCommand="queuecommand,First"
 		FirstCommand="%function(self)
+			self:hidden(1)
 			if not Lemonade.Initialized then
 				Lemonade.Timer = self
 				Lemonade:Initialize()
@@ -23,7 +23,7 @@
 		CheckCommand="%function(self)
 			if Lemonade:Check_Write() then
 				Debug('[Lemonade] Program ID \''.. GAMESTATE:GetExternal(59)..'\' took too long to read, clearing.')
-				External:Clear_Write()
+				Lemonade:Clear_Write()
 			end
 
 		end"
@@ -31,14 +31,16 @@
 	<Layer
 		Type="Quad"
 		Name="Lemonade Updater"
-		Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"
 		OverlayReadyMessageCommand="queuecommand,First"
-		FirstCommand="playcommand,Tick"
+		FirstCommand="hidden,1;playcommand,Tick"
 		TickCommand="%function(self)
 			Lemonade:Tick()
 			self:sleep( 0.01 )
 			self:queuecommand('Tick')
 		end"
 	/>
+
+	<!-- Load Scripts -->
+	<Layer File="Lemonade.Loader.xml"/>
 
 </children></ActorFrame>

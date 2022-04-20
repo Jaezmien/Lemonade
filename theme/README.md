@@ -29,7 +29,7 @@ Example:
 		<Layer File="Console"/>
 		<Layer File="ViewGC" />
 
-		<Layer File="Lemonade"/> <!-- Insert Lemonade.xml here -->
+		<Layer File="Lemonade.xml"/> <!-- Insert Lemonade.xml here -->
 	</children>
 
 </ActorFrame>
