@@ -1,44 +1,44 @@
 <ActorFrame><children>
 
-    <Layer
-        Type="Quad"
-        Name="Lemonade Timer"
-        Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"
-        OverlayReadyMessageCommand="queuecommand,First"
-        FirstCommand="%function(self)
+	<Layer
+		Type="Quad"
+		Name="Lemonade Timer"
+		Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"
+		OverlayReadyMessageCommand="queuecommand,First"
+		FirstCommand="%function(self)
 			if not Lemonade.Initialized then
 				Lemonade.Timer = self
 				Lemonade:Initialize()
 				self:queuecommand('Detect')
 			end
-        end"
-        DetectCommand="%function(self)
-            if GAMESTATE:GetExternal(57) == 1 then
-                self:sleep(1/2)
-                self:queuecommand('Check')
-            end
-            self:sleep(1/60)
-            self:queuecommand('Detect')
-        end"
-        CheckCommand="%function(self)
-            if Lemonade:Check_Write() then
-                Debug('[Lemonade] Program ID \''.. GAMESTATE:GetExternal(59)..'\' took too long to read, clearing.')
-                External:Clear_Write()
-            end
+		end"
+		DetectCommand="%function(self)
+			if GAMESTATE:GetExternal(57) == 1 then
+				self:sleep(1/2)
+				self:queuecommand('Check')
+			end
+			self:sleep(1/60)
+			self:queuecommand('Detect')
+		end"
+		CheckCommand="%function(self)
+			if Lemonade:Check_Write() then
+				Debug('[Lemonade] Program ID \''.. GAMESTATE:GetExternal(59)..'\' took too long to read, clearing.')
+				External:Clear_Write()
+			end
 
-        end"
-    />
-    <Layer
-        Type="Quad"
-        Name="Lemonade Updater"
-        Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"
-        OverlayReadyMessageCommand="queuecommand,First"
-        FirstCommand="playcommand,Tick"
-        TickCommand="%function(self)
+		end"
+	/>
+	<Layer
+		Type="Quad"
+		Name="Lemonade Updater"
+		Condition="FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617"
+		OverlayReadyMessageCommand="queuecommand,First"
+		FirstCommand="playcommand,Tick"
+		TickCommand="%function(self)
 			Lemonade:Tick()
-            self:sleep( 0.01 )
-            self:queuecommand('Tick')
-        end"
-    />
+			self:sleep( 0.01 )
+			self:queuecommand('Tick')
+		end"
+	/>
 
 </children></ActorFrame>
