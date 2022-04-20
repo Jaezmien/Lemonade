@@ -8,7 +8,7 @@
 
 # Instructions
 
-1. Copy the contents of [Screens](Screens/) and [Scripts](Scripts/) to your theme directory. On new instals, there should be no merged files.
+1. Copy the contents of [Screens](Screens/) and [Scripts](Scripts/) to your theme directory. On new installs, there should be no merged files.
 
 2. Go to `Screens/Overlay/default.xml` and insert `Lemonade.xml` to the end of the ActorFrame.
 
