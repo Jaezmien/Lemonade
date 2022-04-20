@@ -209,8 +209,6 @@ function Lemonade.Check_Write(self)
 	w_bf.state = GAMESTATE:GetExternal(55)
 	w_bf.id = GAMESTATE:GetExternal(59)
 
-	if table.getn(self.Last_Seen_Write.buffer) ~= table.getn(w_bf.buffer) then return false end
-
 	local changed = false
 	for i,v in pairs(w_bf.buffer) do
 		if self.Last_Seen_Write.buffer[i] ~= v then
@@ -218,6 +216,7 @@ function Lemonade.Check_Write(self)
 			break
 		end
 	end
+
 	return not changed and (w_bf.id == self.Last_Seen_Write.id) and (w_bf.state == self.Last_Seen_Write.state)
 
 end
