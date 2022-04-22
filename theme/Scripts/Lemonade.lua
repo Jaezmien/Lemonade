@@ -257,7 +257,7 @@ do
 			debug_help_parseable[ v[1] ] = v[2]
 		end
 	end
-	function Lemonade.Debug()
+	function Lemonade.Dump()
 		print('---')
 		for i=0,63 do
 			print( '', debug_help_parseable[i]  )
@@ -265,4 +265,5 @@ do
 		end
 		print('---')
 	end
+	Lemonade.Debug = false
 end

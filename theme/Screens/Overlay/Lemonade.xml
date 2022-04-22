@@ -22,7 +22,9 @@
 		end"
 		CheckCommand="%function(self)
 			if Lemonade:Check_Write() then
-				Debug('[Lemonade] Program ID \''.. GAMESTATE:GetExternal(59)..'\' took too long to read, clearing.')
+				if Lemonade.Debug then
+					Debug('[Lemonade] Program ID \''.. GAMESTATE:GetExternal(59)..'\' took too long to read, clearing.')
+				end
 				Lemonade:Clear_Write()
 			end
 
