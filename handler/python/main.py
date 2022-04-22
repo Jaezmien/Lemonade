@@ -79,7 +79,7 @@ def tick_notitg():
 	if not NotITG.Heartbeat():
 		global _heartbeat_status
 
-		if (args.pid and NotITG.FromProcessId(args.pid)) or NotITG.Scan( args.unknown ):
+		if _heartbeat_status != 2 and ((args.pid and NotITG.FromProcessId(args.pid)) or NotITG.Scan( args.unknown )):
 			if NotITG.GetDetails()[ "Version" ] in ["V1", "V2"]:
 				print("⚠ Unsupported NotITG version! Expected V3 or higher, got " + NotITG.GetDetails()[ "Version" ])
 				NotITG.Disconnect()
