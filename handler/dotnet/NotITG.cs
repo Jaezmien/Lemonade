@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Timers;
 using System.Linq;
-using Newtonsoft.Json;
 
 namespace NotITG
 {
-	class NotITGWrapper
+	public partial class NotITGWrapper
 	{
 		public int applicationID;
 		public NotITGWrapper(int appID)
@@ -109,15 +108,6 @@ namespace NotITG
 					});
 				}
 			}
-		}
-		public void WriteJSON(int index, object data)
-		{
-			if (!notitgClient.Connected) return;
-			List<int> buffer = new List<int>();
-			buffer.Add(index);
-			buffer.AddRange(Encode(JsonConvert.SerializeObject(data)));
-			Console.WriteLine("Sending -> " + JsonConvert.SerializeObject(data));
-			Write(buffer.ToArray());
 		}
 
 		private string ENCODE_GUIDE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n'\"~!@#$%^&*()<>/-=_+[]:;.,`{}";
