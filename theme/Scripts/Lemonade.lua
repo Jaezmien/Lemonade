@@ -74,6 +74,12 @@ end
 local Buffer_Add = function(self, id, buffer)
 	if type(id) ~= 'number' then Debug('[Lemonade] Sender id must be a number.'); return self end
 
+	-- Validate buffer
+	for i=1, table.getn(buffer), 1 do
+		if type(buffer[i]) ~= 'number' then Debug('[Lemonade] Buffer values must be a number.'); return self end
+		if math.floor(buffer[i]) ~= buffer[i] then Debug('[Lemonade] Buffer values must be an integer.'); return self end
+	end
+
 	if table.getn(buffer) > BUFFER_LENGTH then
 		local ind = 1
 		while ind<=table.getn(buffer) do
@@ -202,6 +208,7 @@ function Lemonade.Clear_Write(self)
 	GAMESTATE:SetExternal(59,0)
 end
 function Lemonade.Check_Write(self)
+	if not self.Last_Seen_Write then return false end
 
 	local w_bf = {}
 	w_bf.buffer = {}
@@ -218,7 +225,6 @@ function Lemonade.Check_Write(self)
 	end
 
 	return not changed and (w_bf.id == self.Last_Seen_Write.id) and (w_bf.state == self.Last_Seen_Write.state)
-
 end
 
 -- Initializing --
