@@ -5,6 +5,13 @@ using System.Linq;
 
 namespace NotITG
 {
+	static class Extension
+    {
+		public static T[][] Chunk<T>(this T[] buffer, int length)
+		{
+			return buffer.Select((v,i)=>new{Value=v,Index=i}).GroupBy(x =>x.Index/length).Select(x=>x.Select(y=>y.Value).ToArray()).ToArray();
+		}
+	}
 	public partial class NotITGWrapper
 	{
 		public int applicationID;
