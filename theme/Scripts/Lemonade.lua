@@ -1,275 +1,270 @@
-Lemonade = {}
-
 --[[
 
-	<< LEMONADE'S EXTERNAL MAPPING >>
-	0-25  - READ        (26)
-	26    - READ LENGTH
-	27    - IS BUFFER A PART OF A SET (0=No, 1=Yes, 2=Yes and the end of set)
-	28-53 - WRITE       (26)
-	54    - WRITE LENGTH
-	55    - IS BUFFER A PART OF A SET (0=No, 1=Yes, 2=Yes and the end of set)
-	56    - Reader Flag (0=Idle,1=Reserved/Writing,2=Read) [by external application]
-	57    - Writer Flag (0=Idle,1=Avaiable)                [by notitg]
-	58    - Sender ID for Reader
-	59    - Sender ID for Writer
-	60    - Has NotITG initialized? (and not in loading state)
-	61    - Unused
-	62    - Unused
-	63    - Unused
+	Lemonade v2.0 Mapping
 
-]]
+	 | Range | Description             | Values                                                                                          | Notes                                        |
+	| ----- | ----------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------- |
+	| 0     | Incoming Application ID | int                                                                                             | Application -> NotITG                        |
+	| 1     | Incoming Type           | `0` = Partial, `1` = End of Buffer                                                              |                                              |
+	| 2     | Incoming Length         | int                                                                                             |                                              |
+	| 3-29  | Incoming Data           | int[]                                                                                           |                                              |
+	| 30    | Incoming State          | `0` = Idle, `1` = Reserved, currently being written, `2` = Data is available for NotITG to read |                                              |
+	| 31    | Outgoing Listener ID    | int                                                                                             | NotITG -> Application                        |
+	| 32    | Outgoing Type           | `0` = Partial, `1` = End of Buffer                                                              |                                              |
+	| 33    | Outgoing Length         | int                                                                                             |                                              |
+	| 34-60 | Outgoing Data           | int[]                                                                                           |                                              |
+	| 61    | Outgoing State          | `0` = Idle, `1` = Data is available for application to read                                     |                                              |
+	| 63    | Initialization State    | Must be 56                                                                                      | Has NotITG initialized and finished loading? |
 
-Lemonade.Enabled = true
-function Lemonade.Disable(self, disable) self.Enabled = not disable end
+]]--
+
+Lemonade = {}
+Lemonade.Timer = nil
+
+LEMONADE_INDEXES = {
+	INCOMING = {
+		ID = 0,
+		TYPE = 1,
+		LENGTH = 2,
+		DATA = {3, 29},
+		STATE = 30
+	},
+	OUTGOING = {
+		ID = 31,
+		TYPE = 32,
+		LENGTH = 33,
+		DATA = {34, 60},
+		STATE = 61
+	},
+	INIT_STATE = 63,
+}
+LEMONADE_INCOMING_STATE = {
+	IDLE = 0,
+	BUSY = 1,
+	AVAIABLE = 2, -- Meaning that data is present for NotITG to read!
+}
+LEMONADE_OUTGOING_STATE = {
+	IDLE = 0,
+	AVAILBLE = 1, -- Meaning that data is present for the application to read!
+}
+LEMONADE_BUFFER_TYPE = {
+	PARTIAL = 0,
+	END = 1,
+}
+LEMONADE_MAXIMUM_BUFFER_LENGTH = LEMONADE_INDEXES.INCOMING.DATA[2] - LEMONADE_INDEXES.INCOMING.DATA[1]
+LEMONADE_INIT_VALUE = 56
 
 Lemonade.Initialized = false
-Lemonade.Last_Seen_Write = nil
-Lemonade.Timer = nil
-Lemonade.Buffers = {}
-Lemonade.Hooks = {}
-local ReadBuffer = {}
-local BUFFER_LENGTH = 26
-
--- Simple Encode/Decode
-do
-	local GUIDE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 \n'\"~!@#$%^&*()<>/-=_+[]:;.,`{}"
-	function Lemonade.Encode(self, str)
-		local t = {}
-		for i=1,string.len(str) do
-			local char = string.sub(str,i,i)
-			for c=1,string.len(GUIDE) do
-				if string.sub(GUIDE,c,c) == char then table.insert(t,c) break end
-			end
-		end
-		return t
-	end
-	function Lemonade.Decode(self, buff)
-		local s = ""
-		for i,v in pairs(buff) do
-			s = s..(string.sub(GUIDE,v,v))
-		end
-		return s
-	end
+function Lemonade:Initialize()
+	for i=0,63 do GAMESTATE:SetExternal(i,0) end
+	GAMESTATE:SetExternal(LEMONADE_INDEXES.INIT_STATE, LEMONADE_INIT_VALUE)
+	print('[Lemonade] Initialized!')
+	self.Initialized = true
 end
 
---[[
-	id = Program ID
-	buffer = Array of numbers to send
+Lemonade.Enabled = true
+---@param disable boolean
+function Lemonade:Disable(disable) self.Enabled = not disable end
 
-	Buffer
-	{
-		id: number,
-		buffer: int[],
-		state: BufferState
-	}
+--- Encodes a string into a byte array
+---@param str string
+---@return number[]
+function Lemonade:Encode(str)
+	if type(str) ~= "string" then error(string.format("Expected type string, got %s", type(str))) return {} end
+	local b = {}
+	for i=1, string.len(str) do
+		table.insert(b, string.byte(str, i))
+	end
+	return b
+end
 
-	BufferState
-	{
-		0 = Individual,
-		1 = Incomplete Set,
-		2 = End of Set
-	}
-]]
-local Buffer_Add = function(self, id, buffer)
-	if type(id) ~= 'number' then Debug('[Lemonade] Sender id must be a number.'); return self end
+--- Decodes a byte array into a string
+---@param buff number[]
+---@return string
+function Lemonade:Decode(buff)
+	if type(buff) ~= "table" then error(string.format("Expected type table, got %s", type(buff))) return "" end
+	local b = {}
+	for _,v in ipairs(buff) do
+		table.insert(b, string.char(v))
+	end
+	return table.concat(b, "")
+end
 
-	-- Validate buffer
-	for i=1, table.getn(buffer), 1 do
-		if type(buffer[i]) ~= 'number' then Debug('[Lemonade] Buffer values must be a number.'); return self end
-		if math.floor(buffer[i]) ~= buffer[i] then Debug('[Lemonade] Buffer values must be an integer.'); return self end
+--
+
+---@type table<number, number[]>
+local partialReadBuffers = {}
+
+---@alias BufferType
+---| 0 # Partial
+---| 1 # End
+
+---@class WriteBuffer
+---@field appID number
+---@field data number[]
+---@field state BufferType
+
+---@type WriteBuffer[]
+local upcomingWriteBuffers = {}
+
+---Keeps track of the last write buffer
+---@type WriteBuffer | nil
+local lastSeenWrite = nil
+
+-- TODO: Validations
+
+---Sends data
+---@param appID number
+---@param buffer number[]
+function Lemonade:Send(appID, buffer)
+	if type(appID) ~= 'number' then return error(string.format("Expected app id to be number, got %s", type(appID))) end
+
+	if table.getn(buffer) <= LEMONADE_MAXIMUM_BUFFER_LENGTH then
+		table.insert(upcomingWriteBuffers, {
+			appID = appID,
+			data = buffer,
+			state = LEMONADE_BUFFER_TYPE.END
+		})
+
+		return
 	end
 
-	if table.getn(buffer) > BUFFER_LENGTH then
-		local ind = 1
-		while ind<=table.getn(buffer) do
-			local _t = {}
-			for i=ind, ind+(BUFFER_LENGTH-1) do
-				if i <= table.getn(buffer) then table.insert(_t, buffer[i] ) end
-			end
-			table.insert( self, {
-				id = id,
-				buffer = _t,
-				state = ( ind+BUFFER_LENGTH > table.getn(buffer) ) and 2 or 1
-			} )
-			ind = ind + BUFFER_LENGTH
+	local idx = 1
+	while idx <= table.getn(buffer) do
+		local partialData = {}
+		local i = idx
+		while i <= idx+(LEMONADE_MAXIMUM_BUFFER_LENGTH-1) do
+			table.insert(partialData, buffer[i])
+			i = i + 1
 		end
-	else
-		table.insert( self, {
-			id = id,
-			buffer = buffer,
-			state = 0,
+
+		local isEnd = idx + LEMONADE_MAXIMUM_BUFFER_LENGTH > table.getn(buffer)
+
+		table.insert( upcomingWriteBuffers, {
+			appID = appID,
+			data = partialData,
+			state = isEnd and LEMONADE_BUFFER_TYPE.END or LEMONADE_BUFFER_TYPE.PARTIAL
 		} )
-	end
-end
-setmetatable(Lemonade.Buffers, {
-	__index = function(self, key)
-		if key == 'Add' then return Buffer_Add end
-		return nil
-	end
-})
 
---[[
-	id = Program ID
-	unique = Unique Hook ID
-	func = Function to run
-]]
-local Hooks_Add = function(self, id, unique, func)
-	if type(id) ~= 'number' then
-		Debug('[Lemonade] Hook id must be a number.')
-		return
+		idx = idx + LEMONADE_MAXIMUM_BUFFER_LENGTH
 	end
-	self[ id ] = self[ id ] or {}
-	self[ id ][ unique ] = func
 end
-local Hooks_Remove = function(self, id, unique)
-	if type(id)~='number' then
-		Debug('[Lemonade] Hook id must be a number.')
-		return
-	end
-	if not self[ id ] then
-		Debug('[Lemonade] Hook id doesn\'t contain any hooks.')
-		return
-	end
-	self[ id ][ unique ] = nil
-end
-local Hooks_Includes = function(self, id) return self[ id ] ~= nil end
-local Hooks_Get = function(self, id) return self[ id ] end
-setmetatable(Lemonade.Hooks, {
-	__index = function(self, key)
-		if key == 'Add' then return Hooks_Add end
-		if key == 'Remove' then return Hooks_Remove end
-		if key == 'Includes' then return Hooks_Includes end
-		if key == 'Get' then return Hooks_Get end
-		return nil
-	end
-})
 
--- Updating --
-function Lemonade.Tick(self)
+---@type table<number, table<string, fun(data: number[])>>
+local listeners = {}
+
+---@param appID number
+---@return table<string, fun(data: number[])>
+function Lemonade:GetListeners(appID)
+	if listeners[appID] == nil then return {} end
+	return listeners[appID]
+end
+---@param appID number
+---@return boolean
+function Lemonade:HasListeners(appID)
+	return table.getn(self:GetListeners(appID)) > 0
+end
+---@param appID number
+---@param callbackID string
+---@param callback fun(data: number[])
+function Lemonade:AddListener(appID, callbackID, callback)
+	listeners[appID] = listeners[appID] or {}
+	listeners[appID][callbackID] = callback
+end
+---@param appID number
+---@param callbackID string
+function Lemonade:RemoveListener(appID, callbackID)
+	if listeners[appID] == nil then return end
+	listeners[appID][callbackID] = nil
+end
+
+---Checks if the Outgoing Channel is still being used by the last write
+---@return boolean
+function Lemonade:IsOutgoingBlocked()
+	if not lastSeenWrite then return false end
+
+	local appID = GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.ID)
+	local state = GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.STATE)
+
+	if appID ~= lastSeenWrite.appID then return false end
+	if state ~= lastSeenWrite.state then return false end
+
+	local length = GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.LENGTH)
+	for i=1,length do
+		local idx = LEMONADE_INDEXES.OUTGOING.DATA[1] + (i-1)
+		local externalData = GAMESTATE:GetExternal(idx)
+		if lastSeenWrite.data[i] ~= externalData then return false end
+	end
+
+	return true
+end
+
+function Lemonade:ClearOutgoingData()
+	lastSeenWrite = nil
+
+	for i=LEMONADE_INDEXES.OUTGOING.DATA[1],LEMONADE_INDEXES.OUTGOING.DATA[2] do GAMESTATE:SetExternal(i,0) end
+	GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.ID,0)
+	GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.TYPE,LEMONADE_BUFFER_TYPE.END)
+	GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.LENGTH,0)
+	GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.STATE,LEMONADE_OUTGOING_STATE.IDLE)
+end
+
+function Lemonade:Tick()
 	if not self.Enabled or not self.Initialized then return end
 	if not (FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) > 20180617) then
 		self.Enabled = false
 		return
 	end
 
-	-- READ --
-	if GAMESTATE:GetExternal(56) == 2 then
-		local r_bf = {}
-		for i=1,GAMESTATE:GetExternal(26) do
-			table.insert( r_bf , GAMESTATE:GetExternal(i-1) )
-			GAMESTATE:SetExternal( i-1 , 0 )
+	if GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.STATE) == LEMONADE_INCOMING_STATE.AVAIABLE then
+		local data = {}
+
+		for i=1,GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.LENGTH) do
+			local idx = LEMONADE_INDEXES.INCOMING.DATA[1] + (i-1)
+			table.insert(data, GAMESTATE:GetExternal(idx) )
+			GAMESTATE:SetExternal(idx, 0)
 		end
-		GAMESTATE:SetExternal(26,0)
-		local r_id = GAMESTATE:GetExternal(58)
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.LENGTH,0)
 
-		if GAMESTATE:GetExternal(27) == 0 then
+		local appID = GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.ID)
 
-			if self.Hooks:Includes(r_id) then
-				for i,v in pairs( self.Hooks:Get(r_id) ) do v( r_bf ) end
+		if GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.TYPE) == LEMONADE_BUFFER_TYPE.END then
+			if partialReadBuffers[appID] then
+				for _,v in ipairs(data) do table.insert(partialReadBuffers[appID], v) end
+				data = partialReadBuffers[appID]
+				partialReadBuffers[appID] = nil
 			end
 
-		else
-
-			ReadBuffer[r_id] = ReadBuffer[r_id] or {}
-			for i,v in pairs(r_bf) do table.insert( ReadBuffer[r_id], v ) end
-			if GAMESTATE:GetExternal(27) == 2 then
-				if self.Hooks:Includes(r_id) then
-					for i,v in pairs( self.Hooks:Get(r_id) ) do v( ReadBuffer[r_id] ) end
+			if self:HasListeners(appID) then
+				for _, callback in pairs( self:GetListeners(appID) ) do
+					callback(data)
 				end
-				ReadBuffer[r_id] = nil
-			end
-
-		end
-
-		GAMESTATE:SetExternal(27, 0)
-		GAMESTATE:SetExternal(56, 0)
-		GAMESTATE:SetExternal(58, 0)
-	end
-
-	-- WRITE --
-	if GAMESTATE:GetExternal(57) == 0 and table.getn( self.Buffers ) > 0 then
-		local w_bf = self.Buffers[1]
-		for i,v in pairs(w_bf.buffer) do GAMESTATE:SetExternal( 27+i , v ) end
-		GAMESTATE:SetExternal( 54 , table.getn(w_bf.buffer) )
-		GAMESTATE:SetExternal( 55 , w_bf.state )
-		GAMESTATE:SetExternal( 59 , w_bf.id )
-		GAMESTATE:SetExternal( 57 , 1 )
-
-		table.remove(self.Buffers,1)
-		self.Last_Seen_Write = w_bf
-	end
-end
-function Lemonade.Clear_Write(self)
-	self.Last_Seen_Write = nil
-	
-	for i=28,53 do GAMESTATE:SetExternal(i,0) end
-	GAMESTATE:SetExternal(57,0)
-	GAMESTATE:SetExternal(59,0)
-end
-function Lemonade.Check_Write(self)
-	if not self.Last_Seen_Write then return false end
-
-	local w_bf = {}
-	w_bf.buffer = {}
-	for i=1,GAMESTATE:GetExternal(54) do table.insert( w_bf.buffer , GAMESTATE:GetExternal(27+i) ) end
-	w_bf.state = GAMESTATE:GetExternal(55)
-	w_bf.id = GAMESTATE:GetExternal(59)
-
-	local changed = false
-	for i,v in pairs(w_bf.buffer) do
-		if self.Last_Seen_Write.buffer[i] ~= v then
-			changed = true
-			break
-		end
-	end
-
-	return not changed and (w_bf.id == self.Last_Seen_Write.id) and (w_bf.state == self.Last_Seen_Write.state)
-end
-
--- Initializing --
-function Lemonade.Initialize(self)
-	for i=0,63 do GAMESTATE:SetExternal(i,0) end
-	GAMESTATE:SetExternal(60,1)
-	print('[Lemonade] Initialized!')
-	self.Initialized = true
-end
-
--- Debugging --
-do
-	local debug_help = {
-		{ {0,25}, 'Read Buffer' },
-		{ 26, 'Read Buffer Length' },
-		{ 27, 'Read Type (0 = Single, 1 = Part of Set, 2 = End of Set)' },
-		{ {28,53}, 'Write Buffer' },
-		{ 54, 'Write Buffer Length' },
-		{ 55, 'Write Type (0 = Single, 1 = Part of Set, 3 = End of Set)' },
-		{ 56, 'Read Flag by External (0 = Idle, 1 = Reserved/Writing, 2 = Allowing Read)'},
-		{ 57, 'Write Flag by NotITG (0 = Idle, 1 = Available)' },
-		{ 58, 'Reader ID' },
-		{ 59, 'Writer ID' },
-		{ 60, 'Initialized State (0 = No, 1 = Yes)' },
-		{ 61, 'Extra 1' },
-		{ 62, 'Extra 2' },
-		{ 63, 'Extra 3' },
-	}
-	local debug_help_parseable = {}
-	for i,v in pairs(debug_help) do
-		if type(v[1]) == 'table' then
-			for k=v[1][1], v[1][2] do
-				debug_help_parseable[ k ] = v[2]
 			end
 		else
-			debug_help_parseable[ v[1] ] = v[2]
+			partialReadBuffers[appID] = partialReadBuffers[appID] or {}
+			for _,v in ipairs(data) do table.insert(partialReadBuffers[appID], v) end
 		end
+
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.TYPE, 0)
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.ID, 0)
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.STATE, LEMONADE_INCOMING_STATE.IDLE)
 	end
-	function Lemonade.Dump()
-		print('---')
-		for i=0,63 do
-			print( '', debug_help_parseable[i]  )
-			print( '', '', i+1, GAMESTATE:GetExternal(i) )
+
+	if GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.STATE) == LEMONADE_OUTGOING_STATE.IDLE and
+		table.getn( upcomingWriteBuffers ) > 0 then
+		---@type WriteBuffer
+		local writeInfo = table.remove(upcomingWriteBuffers,1)
+
+		for i,v in ipairs(writeInfo.data) do
+			local idx = LEMONADE_INDEXES.OUTGOING.DATA[1] + (i-1)
+			GAMESTATE:SetExternal(idx, v)
 		end
-		print('---')
+
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.LENGTH, table.getn(writeInfo.data))
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.STATE , writeInfo.state)
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.ID , writeInfo.appID)
+		GAMESTATE:SetExternal(LEMONADE_INDEXES.OUTGOING.STATE , LEMONADE_OUTGOING_STATE.AVAILABLE)
+
+		lastSeenWrite = writeInfo
 	end
-	Lemonade.Debug = false
 end
