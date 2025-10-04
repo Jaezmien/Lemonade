@@ -243,6 +243,8 @@ function Lemonade:Tick()
 				for _, callback in pairs( self:GetListeners(appID) ) do
 					callback(data)
 				end
+			else
+				print(string.format('[Lemonade] %d has no listeners!', appID))
 			end
 		else
 			partialReadBuffers[appID] = partialReadBuffers[appID] or {}
@@ -256,6 +258,7 @@ function Lemonade:Tick()
 
 	if GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.STATE) == LEMONADE_OUTGOING_STATE.IDLE and
 		table.getn( upcomingWriteBuffers ) > 0 then
+
 		---@type WriteBuffer
 		local writeInfo = table.remove(upcomingWriteBuffers,1)
 
