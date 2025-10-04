@@ -41,11 +41,11 @@ LEMONADE_INDEXES = {
 LEMONADE_INCOMING_STATE = {
 	IDLE = 0,
 	BUSY = 1,
-	AVAIABLE = 2, -- Meaning that data is present for NotITG to read!
+	AVAILABLE = 2, -- Meaning that data is present for NotITG to read!
 }
 LEMONADE_OUTGOING_STATE = {
 	IDLE = 0,
-	AVAILBLE = 1, -- Meaning that data is present for the application to read!
+	AVAILABLE = 1, -- Meaning that data is present for the application to read!
 }
 LEMONADE_BUFFER_TYPE = {
 	PARTIAL = 0,
@@ -216,7 +216,7 @@ function Lemonade:Tick()
 		return
 	end
 
-	if GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.STATE) == LEMONADE_INCOMING_STATE.AVAIABLE then
+	if GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.STATE) == LEMONADE_INCOMING_STATE.AVAILABLE then
 		local data = {}
 
 		for i=1,GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.LENGTH) do
