@@ -22,6 +22,9 @@
 		end
 		function Lemonade.Loader.File()
 			local f = Lemonade.Loader.Files[ Lemonade.Loader.i ]
+
+			print(string.format('Loading Lemon Script: %s', f))
+
 			Lemonade.Loader.i = Lemonade.Loader.i + 1
 			return 'LemonScripts/' .. f
 		end
