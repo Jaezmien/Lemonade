@@ -162,7 +162,11 @@ end
 ---@param appID number
 ---@return boolean
 function Lemonade:HasListeners(appID)
-	return table.getn(self:GetListeners(appID)) > 0
+	local n = 0
+	for _,_ in ipairs(self:GetListeners(appID)) do
+		n = n + 1
+	end
+	return n
 end
 ---@param appID number
 ---@param callbackID string
