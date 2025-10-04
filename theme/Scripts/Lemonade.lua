@@ -275,3 +275,15 @@ function Lemonade:Tick()
 		lastSeenWrite = writeInfo
 	end
 end
+
+function Lemonade:DumpState()
+	print('Incoming ID', GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.ID))
+	print('Incoming Type', GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.TYPE))
+	print('Incoming Length', GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.LENGTH))
+	print('Incoming State', GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.STATE))
+
+	print('Outgoing ID', GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.ID))
+	print('Outgoing Type', GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.TYPE))
+	print('Outgoing Length', GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.LENGTH))
+	print('Outgoing State', GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.STATE))
+end
