@@ -132,8 +132,9 @@ function Lemonade:Send(appID, buffer)
 	local idx = 1
 	while idx <= table.getn(buffer) do
 		local partialData = {}
+
 		local i = idx
-		while i <= idx+(LEMONADE_MAXIMUM_BUFFER_LENGTH-1) do
+		while i <= math.min(table.getn(buffer),idx+(LEMONADE_MAXIMUM_BUFFER_LENGTH-1)) do
 			table.insert(partialData, buffer[i])
 			i = i + 1
 		end
