@@ -294,3 +294,10 @@ function Lemonade:DumpState()
 	print('Outgoing Length', GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.LENGTH))
 	print('Outgoing State', GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.STATE))
 end
+
+function Lemonade:CountAwaitingWrite()
+	print(table.getn( upcomingWriteBuffers ))
+end
+function Lemonade:CleanAwaitingWrite()
+	upcomingWriteBuffers = {}
+end
