@@ -233,6 +233,7 @@ function Lemonade:Tick()
 
 		local appID = GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.ID)
 
+		local errs = {}
 		if GAMESTATE:GetExternal(LEMONADE_INDEXES.INCOMING.TYPE) == LEMONADE_BUFFER_TYPE.END then
 			if partialReadBuffers[appID] then
 				for _,v in ipairs(data) do table.insert(partialReadBuffers[appID], v) end
@@ -242,7 +243,8 @@ function Lemonade:Tick()
 
 			if self:HasListeners(appID) then
 				for _, callback in pairs( self:GetListeners(appID) ) do
-					callback(data)
+					local ok, err = pcall(callback, data)
+					if not ok then table.insert(errs, err) end
 				end
 			else
 				print(string.format('[Lemonade] %d has no listeners!', appID))
@@ -255,6 +257,10 @@ function Lemonade:Tick()
 		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.TYPE, 0)
 		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.ID, 0)
 		GAMESTATE:SetExternal(LEMONADE_INDEXES.INCOMING.STATE, LEMONADE_INCOMING_STATE.IDLE)
+
+		for _,v in ipairs(errs) do
+			error(v)
+		end
 	end
 
 	if GAMESTATE:GetExternal(LEMONADE_INDEXES.OUTGOING.STATE) == LEMONADE_OUTGOING_STATE.IDLE and
