@@ -3,8 +3,7 @@
 # 🍋 Lemonade
 
 <a href="https://github.com/Jaezmien/Lemonade/releases/latest">
-	<img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/Jaezmien/Lemonade?color=%23ffff00&style=for-the-badge">
-</a>
+	<img alt="Latest version" src="https://img.shields.io/github/v/tag/jaezmien/lemonade?style=for-the-badge&label=Version&color=ffff00">
 
 > A NotITG External handler
 
