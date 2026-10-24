@@ -38,8 +38,11 @@ Example:
 </ActorFrame>
 ```
 
-# Scripts
+# Lemonds (Scripts)
 
-- [Discord RPC](https://github.com/Jaezmien/Lemonade-DiscordRPC)
-- [Song Info for OBS](https://github.com/Jaezmien/Lemonade-OBSSongInfo)
-- [Spellcard for OBS](https://github.com/Jaezmien/Lemonade-OBSSpellcard)
+- [Discord RPC](https://git.jaezmien.com/Jaezmien/lemon-discord-rpc)
+- [Song Info + Spellcard for OBS](https://git.jaezmien.com/Jaezmien/lemon-obs-songinfo)
+
+## Note
+
+These all require the helper program, [Lemonade Stand](https://github.com/Jaezmien/lemonade-stand)
