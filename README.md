@@ -38,7 +38,7 @@ Example:
 </ActorFrame>
 ```
 
-# Lemonds (Scripts)
+# Lemons (Scripts)
 
 - [Discord RPC](https://git.jaezmien.com/Jaezmien/lemon-discord-rpc)
 - [Song Info + Spellcard for OBS](https://git.jaezmien.com/Jaezmien/lemon-obs-songinfo)
